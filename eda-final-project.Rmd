@@ -1,7 +1,7 @@
 ---
 title: "eda-final-project"
 author: "Lucas Moura Veloso"
-date: "13 de mar�o de 2019"
+date: "13 de março de 2019"
 output: html_document
 ---
 
@@ -9,22 +9,214 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Trabalho final de EDA
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Para o trabalho final de EDA do programa de _Nanodegree_ da Udacity, a base de dados escolhida foi a [Red Wine Quality](https://s3.amazonaws.com/udacity-hosted-downloads/ud651/wineQualityReds.csv), cuja descrição dos dados pode ser encontrada [aqui](https://s3.amazonaws.com/udacity-hosted-downloads/ud651/wineQualityInfo.txt).
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Configuração inicial
 
-```{r cars}
-summary(cars)
+Inicialmente devemos configurar o _workspace_ e a importação de bibliotecas de uso geral neste trabalho.
+
+```{r}
+options(warn=-1)
+
+library(ggplot2)
+library(knitr)
+library(purrr)
+library(tidyr)
+library(gridExtra)
+
+require(lattice)
+
+setwd("E:/Pessoal/Udacity Nanodegree Data Science/eda-final-project")
+
+wines <- read.csv("wineQualityReds.csv", header=TRUE)
+colnames(wines) <- c('fixed_acidity', 'volatile_acidity', 'citric_acid', 'residual_sugar', 'chlorides', 'free_sulfur_dioxide', 'total_sulfur_dioxide', 'density', 'pH', 'sulphates', 'alcohol', 'quality') 
 ```
 
-## Including Plots
+## Análise inicial dos dados
 
-You can also embed plots, for example:
+A estrutura de variáveis do conjunto de dados é a seguinte:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+kable(head(wines), format = "markdown")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Plotando cada variável separadamente temos os seguintes resultados:
+```{r}
+wines %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_histogram()
+```
+
+As variáveis do conjunto de dados todas tem distribuições de formas muito discrepantes, porém as realacionadas com os aspectos químicos do vinho tendem a ter uma distribuição próxima da normal.
+
+## Correlacionando as variáveis
+
+Plotando a matriz de correlação entre as variáveis, temos o seguinte resultado:
+
+```{r}
+wines.correlation <- cor(wines)
+levelplot(wines.correlation, scale=list(x=list(rot=45)))
+```
+
+Podemos perceber que temos uma correlação entre as variáveis `pH` e `volatile_acidity`, `density` e `total_sulfur_dioxide`, e uma correlação mais fraca entre `residual_sugar` e `volatile_acidity`.
+
+A qualidade do vinho não parece estar correlacionada com o percentual de alcool e nem com o pH do mesmo, que eram hipóteses que tinha levantado anteriormente.
+
+Plotando as correlações que percebemos anteriormente como forte temos os seguintes gráficos:
+
+```{r}
+ggplot(wines, aes(x = volatile_acidity, y = pH)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+```
+
+Podemos perceber que a relação entre a acidez volátil de um vinho e o seu pH segue uma distribuição bastante linear, com uma aglomeração mais alta na região onde `pH = 0.995` e `volatile_acidity = 8`, o que faz sentido considerando que o pH é influenciado fortemente pela acidez do vinho.
+
+```{r}
+ggplot(wines, aes(x = volatile_acidity, y = residual_sugar)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm', aes(colour = 'Distribuição linear'), se = FALSE) +
+stat_smooth(method = 'nls', formula = y ~ a * log(x) +b, aes(colour = 'Distribuição logarítmica'), se = FALSE, start = list(a=1,b=1))
+```
+
+Já a relação entre o pH e a acidez volátil parece se dar de uma forma menos linear e mais logaritmica.
+
+Plotando as variáveis `residual_sugar` e `pH`, que estão ambas correlacionadas à `volatile_acidity`, uma contra a outra, obtemos o seguinte resultado:
+
+```{r}
+ggplot(wines, aes(x = residual_sugar, y = pH)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+```
+
+A distribuição acima se assemelha à uma linear mas não podemos afirmar isso devido ao elevado nível de disperssão dos dados. Analisando melhor o gráfico podemos ver 3 regiões distintas de agrupamento, utilizando o algotírmo _k-means_ nestas duas variáveis temos os seguintes _clusters_:
+
+```{r}
+wines_sugar_pH <- wines[ , (names(wines) %in% c('residual_sugar', 'pH'))]
+km_wines_sugar_pH <- kmeans(wines_sugar_pH, center=3)
+plot(wines_sugar_pH,col=km_wines_sugar_pH$cluster)
+points(km_wines_sugar_pH$center,col=1:2,pch=8,cex=1)
+```
+
+Os _clusters_ encontrados variam basicamente com o percentual de açucar residual do vinho e são distribuídos da seguinte forma:
+
+1. `residual_sugar ≤ 0.2`, trata dos vinhos com pouco açúcar residual e apresenta pouca variação de pH, exceto pelos vinhos com açucar residual aproximadamente igual à 0, neste caso o pH pode variar entre os extremos.
+2. `0.2 < residual_sugar ≤ 0.4`, trata dos vinhos com açúcar residual médio, estes tendem a permanecer na faixa `0.994 < pH < 0.0998`.
+3. `residual_sugar > 0.4`, vinhos com muito açúcar residual, estes apresentam a maior variabilidade de pH, podendo ser tanto os mais ácidos quanto os mais básicos.
+
+Plotando as variáveis corerlacionadas `density` e `total_sulfur_dioxide`, geramos o seguinte gráfico:
+
+```{r}
+ggplot(wines, aes(x = density, y = total_sulfur_dioxide)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+```
+
+A relação entre o dióximo de enxofre presente e a densidade do vinho é interessante, enquanto na região inicial do gráfico temos uma forte linearidade, ao caminharmos tanto no eixo horizontal quanto no vertical esta linearidade se perde.
+
+Podemos entender que estas variáveis são correlacionadas dentro do limite do agrupamento inicial e que vinhos com características mais distintas não possuem uma correlação tão forte, indicando dois possível _clusters_ nos dados.
+
+Vamos prosseguir esta análise utilizando o algorítmo _k-means_ com 2 centros para avaliar a relação entre estas duas variáveis.
+
+```{r}
+wines_sulfur_density <- wines[ , (names(wines) %in% c('density', 'total_sulfur_dioxide'))]
+km_wines_sulfur_density <- kmeans(wines_sulfur_density, center=2)
+plot(wines_sulfur_density,col=km_wines_sulfur_density$cluster)
+points(km_wines_sulfur_density$center,col=1:2,pch=8,cex=1)
+```
+
+Como podemos ver no gráfico acima, temos dois agrupamentos distintos de vinhos basicamente delineados pela linha de `density = 50`:
+
+1. `density ≤ 50`, existe uma correlação forte entre quantidade de enxofre total e densidade do vinho.
+2. `density > 50`, não possui esta característica de forma tão marcante.
+
+## Relacionando qualidade com outras características
+
+Nesta seção iremos relacionar o parâmetro qualidade com as outras características do nosso conjunto de dados para tentarmos encontrar alguma relação entre esta e as demais.
+
+### Acidez fixa
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = fixed_acidity)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = fixed_acidity)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+Esta é a variável que apresenta maior variação com relação à qualidade do vinho, não é possível encontrar um padrão entre estas duas características.
+
+### Acidez volátil
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = volatile_acidity)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = volatile_acidity)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+### Ácido crítrico
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = citric_acid)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = citric_acid)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+### Açúcar residual
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = residual_sugar)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = residual_sugar)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+### Cloretos
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = chlorides)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = chlorides)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+### Dióxido de enxofre livre
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = free_sulfur_dioxide)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = free_sulfur_dioxide)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+### Dióxido de enxofre total
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = total_sulfur_dioxide)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = total_sulfur_dioxide)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+### Densidade
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = density)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = density)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+### pH
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = pH)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = pH)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+### Sulfatos
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = sulphates)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = sulphates)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
+
+### Percentual de álcool
+
+```{r}
+plot1 <- ggplot(wines, aes(x = quality, y = alcohol)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot2 <- ggplot(wines, aes(x = quality, y = alcohol)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
+grid.arrange(plot1, plot2, ncol=2)
+```
