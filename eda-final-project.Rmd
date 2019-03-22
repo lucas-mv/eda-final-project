@@ -134,7 +134,7 @@ Nesta seção iremos relacionar o parâmetro qualidade com as outras caracterís
 ### Acidez fixa
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = fixed_acidity)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = fixed_acidity)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'lm')
 plot2 <- ggplot(wines, aes(x = quality, y = fixed_acidity)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
@@ -144,79 +144,103 @@ Esta é a variável que apresenta maior variação com relação à qualidade do
 ### Acidez volátil
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = volatile_acidity)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = volatile_acidity)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'lm')
 plot2 <- ggplot(wines, aes(x = quality, y = volatile_acidity)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
+Assim como a acidez fixa, a acidez volátil não parece ter uma relação direta com a qualidade, porém apresenta uma variação muito menor do que a sua contraparte.
+
+Parece existir um agrupamento de vinhos com os valores `7 ≤ citric_acid ≤ 9` e `9 ≤ quality ≤ 10`.
+
 ### Ácido crítrico
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = citric_acid)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = citric_acid)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'lm')
 plot2 <- ggplot(wines, aes(x = quality, y = citric_acid)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
+A quantidade de ácido cítrico parece ter uma fraca relação linear decrescente com a qualidade, quando desconsideramos os valores discrepantes.
+
+Podemos perceber um agrupamento grande de vinhos com os valores `0.4 ≤ citric_acid ≤ 0.8` e `8 ≤ quality ≤ 10`, similar ao encontrado na análise da característica _acidez volátil_.
+
 ### Açúcar residual
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = residual_sugar)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = residual_sugar)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'lm')
 plot2 <- ggplot(wines, aes(x = quality, y = residual_sugar)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
+Não parece exitir uma relação entre o açúcar residual e a qualidade do vinho, e podemos perceber pelo gráfico de caixa que esta possui uma variabilidade bem grande.
+
 ### Cloretos
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = chlorides)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = chlorides)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'lm')
 plot2 <- ggplot(wines, aes(x = quality, y = chlorides)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
+Esta variável parece não variar muito, apesar de ter alguns valores muito discrepantes do resto. Existe uma certa linearidade com a qualidade do vinho, mas não muito forte.
+
 ### Dióxido de enxofre livre
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = free_sulfur_dioxide)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = free_sulfur_dioxide)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'lm')
 plot2 <- ggplot(wines, aes(x = quality, y = free_sulfur_dioxide)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
+O dióxido de enxofre livre parece estar relacionado com a qualidade do vinho de forma linear decrescente. A variabilidade desta característica é bem baixa quando desconsideramos os valores discrepantes.
+
 ### Dióxido de enxofre total
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = total_sulfur_dioxide)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = total_sulfur_dioxide)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'lm')
 plot2 <- ggplot(wines, aes(x = quality, y = total_sulfur_dioxide)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
+Ao contrário do dióxido de enxofre livre, o dióxido de enxofre total não parece ter uma relação com a qualidade do vinho e apresenta uma variabilidade realativamente alta, mesmo desconsiderando os valores discrepantes.
+
 ### Densidade
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = density)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = density)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'nls', formula = y ~ a * log(x) +b, se = FALSE, start = list(a=1,b=1))
 plot2 <- ggplot(wines, aes(x = quality, y = density)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
+A densidade parece possuir uma linha de tendência logarítmica decrescente quando relacionada com a qualidade, onde os principais conjuntos de valores permanecem abaixo da mesma.
+
 ### pH
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = pH)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = pH)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'lm')
 plot2 <- ggplot(wines, aes(x = quality, y = pH)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
+Parece haver uma relação linear decrescente entre os valores de pH do vinho e sua qualidade, quanto mais básico o vinho maior é a sua qualidade.
+
 ### Sulfatos
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = sulphates)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = sulphates)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'lm')
 plot2 <- ggplot(wines, aes(x = quality, y = sulphates)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
 
+Não parece haver nenhuma relação entre os sulfatos e a qualiade do vinho. Podemos notar pelo gráfico de caixa que esta caractetrística não possui uma variabilidade muito alta, quando comparada com as outras deste mesmo conjunto de dados.
+
 ### Percentual de álcool
 
 ```{r}
-plot1 <- ggplot(wines, aes(x = quality, y = alcohol)) + geom_point(fill = I('purple'), color = 'black', shape = 21) + stat_smooth(method = 'lm')
+plot1 <- ggplot(wines, aes(x = quality, y = alcohol)) + geom_point(fill = I('purple'), color = 'black', shape = 21, alpha = 1/5) + stat_smooth(method = 'lm')
 plot2 <- ggplot(wines, aes(x = quality, y = alcohol)) + geom_boxplot() + stat_summary(fun.y = mean, geom='point', shape = 4)
 grid.arrange(plot1, plot2, ncol=2)
 ```
+
+A qualidade parece se manter constante independente do percentual de álcool do vinho, o que seria de se esperar já que vinhos com graduações alcoolicas diferentes não necessariamente teriam uma qualidade superior ou inferior.
